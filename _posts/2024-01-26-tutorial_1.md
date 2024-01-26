@@ -1,0 +1,760 @@
+# Import
+
+
+```python
+import time
+
+import matplotlib.pyplot as plt
+
+%matplotlib inline 
+# 코드 실행 후 결과값 시각화
+import matplotlib_inline.backend_inline
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.utils.data as data
+from matplotlib.colors import to_rgba
+from torch import Tensor
+from tqdm.notebook import tqdm  # tqdm 라이브러리를 이용한 실행률 게이지 확인
+
+matplotlib_inline.backend_inline.set_matplotlib_formats("png", "pdf") 
+```
+
+## verson check
+
+
+```python
+print("Using torch", torch.__version__) # 사용중인 파이토치 버전 확인
+```
+
+    Using torch 2.1.2
+    
+
+
+```python
+torch.manual_seed(42) # 난수 생성시 seed 고정으로 인한 동일한 세트 난수 생성
+```
+
+
+
+
+    <torch._C.Generator at 0x7f6f7ceade30>
+
+
+
+
+```python
+x = Tensor(2, 3, 4) #2, 3, 4를 요소로 제공한 텐서 생성
+print(x)
+```
+
+    tensor([[[1.0315e-08, 2.6431e-06, 1.3131e+19, 2.5098e-18],
+             [3.1360e+27, 7.0800e+31, 3.1095e-18, 4.7851e+22],
+             [2.8826e+32, 4.4248e+30, 7.6729e+34, 2.1707e-18]],
+    
+            [[4.5447e+30, 7.0062e+22, 2.1715e-18, 3.2991e-18],
+             [1.2845e+31, 1.8395e+25, 6.1963e-04, 6.8595e-07],
+             [8.3026e-10, 2.5807e-06, 3.3705e-06, 2.7596e-06]]])
+    
+
+    torch.zeros : 0으로 채워진 텐서 생성
+    torch.ones : 1로 채워진 텐서 생성
+    torch.rand : 0과 1 사이에 균일하게 샘플링된 값으로 텐서 생성
+    torch.randn : 평균이 0이고 분산이 1일 정규분포값에서 텐서 생성
+    torch.arange : 0부터 N개의 값 텐서생성 ex)0~N-1
+    torch.Tensore(입력목록) : 제공한 목록 요소에서 텐서 생성
+
+
+```python
+x = Tensor([[1, 2], [3, 4]]) #값이 [1, 2], [3, 4]인 두개의 인덱스를 텐서로 제공
+                             #제공된 텐서는 두개
+print(x)
+```
+
+    tensor([[1., 2.],
+            [3., 4.]])
+    
+
+
+```python
+x = torch.rand(2, 3, 4) #2,3사이의 균일한 값 제공, 3,4 사이의 균일한 값 제공 [(2,3),(3,4)]
+print(x)
+```
+
+    tensor([[[0.8823, 0.9150, 0.3829, 0.9593],
+             [0.3904, 0.6009, 0.2566, 0.7936],
+             [0.9408, 0.1332, 0.9346, 0.5936]],
+    
+            [[0.8694, 0.5677, 0.7411, 0.4294],
+             [0.8854, 0.5739, 0.2666, 0.6274],
+             [0.2696, 0.4414, 0.2969, 0.8317]]])
+    
+
+
+```python
+shape = x.shape # 데이터의 모양, 즉 텐서의 x,y크기 및 텐서의 개수 확인 가능
+print("Shape:", x.shape)
+
+size = x.size() # 텐서의 개수 확인 가능 a,b,c를 모두 곱하면 총 텐서의 양
+print("Size:", size)
+
+dim1, dim2, dim3 = x.size()
+print("Size:", dim1, dim2, dim3)  # 각 dim@ 값에 x.size의 수를 기입 후 출력
+```
+
+    Shape: torch.Size([2, 3, 4])
+    Size: torch.Size([2, 3, 4])
+    Size: 2 3 4
+    
+
+tensor 배열과 numpy 배열은 서로 변환 가능, 상호간 변환 시 사용되는 함수
+[torch.from_numpy]
+
+
+```python
+np_arr = np.array([[1, 2], [3, 4]]) #np_arr는 넘파이 배열
+tensor = torch.from_numpy(np_arr) #numpy배열을 pytorch배열로 변환
+
+print("Numpy arry:", np_arr)
+print("PyTorch tensor:",tensor)
+```
+
+    Numpy arry: [[1 2]
+     [3 4]]
+    PyTorch tensor: tensor([[1, 2],
+            [3, 4]])
+    
+
+
+```python
+x1 = torch.rand(2, 3) # x1에 2~3사이 균일한 제공
+x2 = torch.rand(2, 3) # x1에 2~3사이 균일한 제공
+y = x1 + x2 # y = x1, x2에서 나온 텐서값을 합친 수
+
+print("X1", x1)
+print("X2", x2)
+print("Y", y)
+```
+
+    X1 tensor([[0.1053, 0.2695, 0.3588],
+            [0.1994, 0.5472, 0.0062]])
+    X2 tensor([[0.9516, 0.0753, 0.8860],
+            [0.5832, 0.3376, 0.8090]])
+    Y tensor([[1.0569, 0.3448, 1.2448],
+            [0.7826, 0.8848, 0.8151]])
+    
+
+
+```python
+x1 = torch.rand(2, 3) # x1에 2~3사이 균일한 제공
+x2 = torch.rand(2, 3) # x1에 2~3사이 균일한 제공
+print("X1 (before)", x1) # x1 원랫값 
+print("X2 (before)", x2) # x2 원랫값
+
+x2.add_(x1) # x2에 x1을 합친 수
+print("X1 (after)", x1) #x1 이후 값
+print("X2 (after)", x2) #x2 이후 값
+```
+
+    X1 (before) tensor([[0.5779, 0.9040, 0.5547],
+            [0.3423, 0.6343, 0.3644]])
+    X2 (before) tensor([[0.7104, 0.9464, 0.7890],
+            [0.2814, 0.7886, 0.5895]])
+    X1 (after) tensor([[0.5779, 0.9040, 0.5547],
+            [0.3423, 0.6343, 0.3644]])
+    X2 (after) tensor([[1.2884, 1.8504, 1.3437],
+            [0.6237, 1.4230, 0.9539]])
+    
+
+
+```python
+x = torch.arange(6) # 0부터 6개의 텐서 생성
+print("X", x)
+```
+
+    X tensor([0, 1, 2, 3, 4, 5])
+    
+
+
+```python
+x = x.view(2, 3) # 2 x 3 사이즈로 크기변경
+print("X", x)
+```
+
+    X tensor([[0, 1, 2],
+            [3, 4, 5]])
+    
+
+
+```python
+x = x.permute(1, 0) # 위에서 view함수로 크기 변경된 x가 각 항 안에 있는 순서를 맞춰줌. (내부 공간 스왑) = 2x3이었던 크기를 3x2로 변경
+print("X", x)
+```
+
+    X tensor([[0, 3],
+            [1, 4],
+            [2, 5]])
+    
+
+
+```python
+x = torch.arange(6)
+x = x.view(2, 3)
+print("X", x)
+```
+
+    X tensor([[0, 1, 2],
+            [3, 4, 5]])
+    
+
+
+```python
+W = torch.arange(9).view(3,3) # 동시 실행 가능 예시 //다만 arange한 수가 view 내부에 있는 숫자의 곱이 같아야함
+print("W", W)
+```
+
+    W tensor([[0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8]])
+    
+
+
+```python
+h = torch.matmul(x,W) # X와 W의 행렬 곱 결과 계산
+print("h", h)
+```
+
+    h tensor([[15, 18, 21],
+            [42, 54, 66]])
+    
+
+
+```python
+x = torch.arange(12).view(3, 4)
+print("X", x)
+```
+
+    X tensor([[ 0,  1,  2,  3],
+            [ 4,  5,  6,  7],
+            [ 8,  9, 10, 11]])
+    
+
+    행렬의 값을 export할 시 (x[a,b])를 사용한다.
+    각 a,b는 0을 시작으로 하며 ':' 또한 0으로 지정한다. :이후 숫자가 올시 1번째 수 부터 export하되 적혀있는 숫자부터의 숫자는 제외한다.
+    아무것도 안적혀 있을 시는 에러가 뜨지만 ','가 없는 0 하나는 첫번째 행만 의미한다.
+    a자리에 숫자 두개사이 ':'가 위치한 경우 a~1+@까지의 행을 의미한다.
+    
+
+
+
+```python
+print(x[:,1]) 
+```
+
+    tensor([1, 5, 9])
+    
+
+
+```python
+print(x[0])
+```
+
+    tensor([0, 1, 2, 3])
+    
+
+
+```python
+print(x[:2, -1])
+```
+
+    tensor([3, 7])
+    
+
+
+```python
+print(x[1:2, :])
+```
+
+    tensor([[4, 5, 6, 7]])
+    
+
+
+```python
+x = torch.ones((3,)) # 3행에 1만 가득한 텐서 생성
+print(x.requires_grad) # 텐서 생성시 그래디언트가 필요한지에 대한 코드
+```
+
+    False
+    
+
+
+```python
+x.requires_grad_(True) # 그래디언트 필요한지에 대하여 True 지정
+print(x.requires_grad) # True 출력
+```
+
+    True
+    
+
+
+```python
+x = torch.arange(3, dtype=torch.float32, requires_grad=True) # 0부터 3개의 숫자로 텐서 생성, 데이터 타입은 float32, 그래디언트 필요
+print("X", x)
+```
+
+    X tensor([0., 1., 2.], requires_grad=True)
+    
+
+
+```python
+a = x + 2
+b = a**2
+c = b + 3
+y = c.mean()
+print("Y", y) #각 텐서를 계산하여 나온 값
+```
+
+    Y tensor(12.6667, grad_fn=<MeanBackward0>)
+    
+
+
+```python
+y.backward()
+```
+
+
+```python
+print(x.grad) # 그래디언트 확인 출력
+```
+
+    tensor([1.3333, 2.0000, 2.6667])
+    
+
+
+```python
+gpu_avail = torch.cuda.is_available() # gpu(cuda)를 사용할 수 있는지에 대한 코드
+print(f"Is the GPU available? {gpu_avail}")
+```
+
+    Is the GPU available? True
+    
+
+
+```python
+device = torch.device("cuda") if torch.cuda.is_available() else torch.device ("cpu")
+print("Device", device)
+# Gpu(Cuda)를 사용할 수 있을시엔 "Device cuda"출력, 그렇지 않을시엔 "Device cpu"출력
+```
+
+    Device cuda
+    
+
+
+```python
+x = torch.zeros(2, 3) # 0으로 가득찬 텐서 생성
+x = x.to(device) # cuda가 몇번째 장치인지 확인 '0'이라고 적혀있는 건 가장 우선시 되는 장치임을 나타낸다.
+print("X", x)
+```
+
+    X tensor([[0., 0., 0.],
+            [0., 0., 0.]], device='cuda:0')
+    
+
+
+```python
+x = torch.randn(5000, 5000) # 5000x5000의 무작위 텐서 생성
+
+# cpu를 사용했을 때의 작업 속도 측정
+start_time = time.time()
+_ = torch.matmul(x, x)
+end_time = time.time()
+print(f"CPU time: {(end_time - start_time):6.5f}s")
+
+# gpu를 사용했을 때의 작업 속도 측정
+if torch.cuda.is_available():
+    x = x.to(device)
+    # cuda는 각기 다른 작업을 동시에 처리 할 수 있다.
+    start = torch.cuda.Event(enable_timing=True)
+    end = torch.cuda.Event(enable_timing=True)
+    start.record()
+    _ = torch.matmul(x, x)
+    end.record()
+    torch.cuda.synchronize()  # GPU에서 모든 일이 끝날 때 까지 대기
+    print(f"GPU time: {0.001 * start.elapsed_time(end):6.5f}s")  # 0.001초까지 측정
+```
+
+    CPU time: 0.22755s
+    GPU time: 0.03366s
+    
+
+
+```python
+if torch.cuda.is_available():
+    torch.cuda.manual_seed(42)
+    torch.cuda.manual_seed_all(42)
+# gpu에서 작업하기 위한 별도의 시드 지정
+
+torch.backends.cudnn.deterministic = True # deterministic = 결정론적 / 예측된 동작을 하는 기능
+torch.backends.cudnn.benchmark = False # benchmark = 기준 / 기준에 맞춰진 동작을 하는 기능
+# 인공지능 알고리즘에선 결정론적 알고리즘이 사용된다.
+```
+
+# 연속 XOR 
+
+
+```python
+class MyModule(nn.Module): # My module을 지정
+    def __init__(self):
+        super().__init__()
+        # My module을 위한 초기화 진행
+
+    def forward(self, x):
+        # 모듈 계산을 위한 함수 사용
+        pass
+```
+
+        파란색 - 입력 뉴런 (x1,x2)
+        흰색 - tanh 활성화를 위한 숨겨진 뉴런
+        빨간색 - 출력 뉴런
+
+
+```python
+class SimpleClassifier(nn.Module):
+    def __init__(self, num_inputs, num_hidden, num_outputs):
+        super().__init__()
+        # 기존 github에 업로드되어있는 nn. module 상속
+        self.linear1 = nn.Linear(num_inputs, num_hidden)
+        self.act_fn = nn.Tanh()
+        self.linear2 = nn.Linear(num_hidden, num_outputs, bias = False)
+
+    def forward(self, x):
+        # 예측을 위한 모델 계산 실행
+        x = self.linear1(x)
+        x = self.act_fn(x)
+        x = self.linear2(x)
+        return x # x를 return
+```
+
+
+```python
+model = SimpleClassifier(num_inputs=2, num_hidden=4, num_outputs=1)
+# 모델 출력시 하위 모델도 출력
+print(model)
+```
+
+    SimpleClassifier(
+      (linear1): Linear(in_features=2, out_features=4, bias=True)
+      (act_fn): Tanh()
+      (linear2): Linear(in_features=4, out_features=1, bias=False)
+    )
+    
+
+
+```python
+for name, param in model.named_parameters(): # parameters() 함수를 이용한 매개변수 확인 그러나 이 코드에선 name_parameters() 함수를 이용해 이름까지 가져오도록 함
+    print(f"Parameter {name}, shape {param.shape}")
+```
+
+    Parameter linear1.weight, shape torch.Size([4, 2])
+    Parameter linear1.bias, shape torch.Size([4])
+    Parameter linear2.weight, shape torch.Size([1, 4])
+    
+
+
+```python
+class XORDataset(data.Dataset): # 데이터셋 클래스 정의
+    def __init__(self, size, std=0.1):
+
+        super().__init__() # 기반 클래스 초기화
+        self.size = size
+        self.std = std
+        self.generate_continuous_xor()
+
+    def generate_continuous_xor(self): # 기반클래스 재지정
+        data = torch.randint(low=0, high=2, size=(self.size, 2), dtype=torch.float32)
+        label = (data.sum(dim=1) == 1).to(torch.long)
+        data += self.std * torch.randn(data.shape)
+
+        self.data = data
+        self.label = label
+
+    def __len__(self): # 기존 데이터셋의 샘플 개수 반환
+        return self.size
+
+    def __getitem__(self, idx): # 기존 데이터 불러오기 및 인덱스 기반 정리 실시
+        data_point = self.data[idx]
+        data_label = self.label[idx]
+        return data_point, data_label
+```
+
+
+```python
+dataset = XORDataset(size=200) # xor 데이터셋의 사이즈는 200개
+print("Size of dataset:", len(dataset))
+print("Data point 0:", dataset[0])
+```
+
+    Size of dataset: 200
+    Data point 0: (tensor([0.9103, 0.9632]), tensor(0))
+    
+
+
+```python
+def visualize_samples(data, label): # 데이터셋 시각화
+    if isinstance(data, Tensor):
+        data = data.cpu().numpy()
+    if isinstance(label, Tensor):
+        label = label.cpu().numpy()
+    data_0 = data[label == 0]
+    data_1 = data[label == 1]
+
+# 시각화 할 데이터셋의 크기 정하기
+    plt.figure(figsize=(4, 4)) # a와 b의 크기는 같게 = 정사각형
+    plt.scatter(data_0[:, 0], data_0[:, 1], edgecolor="#333", label="Class 0")
+    plt.scatter(data_1[:, 0], data_1[:, 1], edgecolor="#333", label="Class 1")
+    plt.title("Dataset samples")
+    plt.ylabel(r"$x_2$")
+    plt.xlabel(r"$x_1$")
+    plt.legend()
+```
+
+
+```python
+visualize_samples(dataset.data, dataset.label) # 시각화한 데이터셋 보여주기
+plt.show()
+```
+
+
+    
+![png](output_46_0.png)
+    
+
+
+
+```python
+data_loader = data.DataLoader(dataset, batch_size=8, shuffle=True) 
+# 데이터 셋의 특징 불러오기 및 샘플에 label지정, epoch마다 데이터를 다시 섞어 overfit를 통한 데이터 검색속도를 올리는 date_loader 함수
+```
+
+
+```python
+# 위에서 정의한 데이터셋을 다시 불러와 데이터셋의 데이터를 print
+data_inputs, data_labels = next(iter(data_loader))
+
+print("Data inputs", data_inputs.shape, "\n", data_inputs)
+print("Data labels", data_labels.shape, "\n", data_labels)
+```
+
+    Data inputs torch.Size([8, 2]) 
+     tensor([[ 0.9953, -0.0767],
+            [-0.0687,  0.9615],
+            [-0.1400,  0.9505],
+            [-0.0256, -0.1539],
+            [ 0.0245,  0.9341],
+            [ 0.1144, -0.2274],
+            [ 1.2411, -0.0170],
+            [ 0.0075,  0.8079]])
+    Data labels torch.Size([8]) 
+     tensor([1, 1, 1, 0, 1, 0, 1, 1])
+    
+
+
+```python
+loss_module = nn.BCEWithLogitsLoss()  # 전체 데이터셋에서 일부를 손실 모듈로 지정하면서 overfit을 방지하는 함수
+```
+
+    sigmoid 이해 필요
+    y축기준 0이하는 0=false로 지정, 1이상은 1=True로 지정 
+
+
+
+```python
+optimizer = torch.optim.SGD(model.parameters(), lr=0.1) #sigmoid 함수를 이용한 파마리터를 이용한 경사하강법 실시 기본값은 0.1
+# SGD = Stochastic Gradient Descent = 확률정 경사하강법
+```
+
+
+```python
+train_dataset = XORDataset(size=1000) # 데이터셋의 크기는 1000으로 지정
+train_data_loader = data.DataLoader(train_dataset, batch_size=128, shuffle=True) # 데이터 로더 함수 이용
+```
+
+
+```python
+model.to(device) #데이터는 Gpu로 푸쉬 = 데이터 분류 및 계산은 Gpu로 실시
+```
+
+
+
+
+    SimpleClassifier(
+      (linear1): Linear(in_features=2, out_features=4, bias=True)
+      (act_fn): Tanh()
+      (linear2): Linear(in_features=4, out_features=1, bias=False)
+    )
+
+
+
+
+```python
+def train_model(model, optimizer, data_loader, loss_module, num_epochs=100):
+    # 데이터셋 기본 값 설정
+    model.train()
+
+    # 훈련 시작
+    for epoch in tqdm(range(num_epochs)): 
+        for data_inputs, data_labels in data_loader:
+            data_inputs = data_inputs.to(device) # 데이터 gpu로 푸쉬
+            data_labels = data_labels.to(device) # 데이터 gpu로 푸쉬
+
+            preds = model(data_inputs)
+            preds = preds.squeeze(dim=1) # 각 데이터의 크기는 100으로 지정
+
+            loss = loss_module(preds, data_labels.float())
+
+            optimizer.zero_grad()
+
+            loss.backward()
+
+            optimizer.step()
+```
+
+
+```python
+train_model(model, optimizer, train_data_loader, loss_module) # 데이터셋 실행
+```
+
+
+      0%|          | 0/100 [00:00<?, ?it/s]
+
+
+
+```python
+state_dict = model.state_dict() # 실행된 데이터셋 프린트
+print(state_dict)
+```
+
+    OrderedDict([('linear1.weight', tensor([[-1.7430, -1.9468],
+            [ 1.8979, -2.3737],
+            [-2.0412,  1.0496],
+            [ 0.3867, -0.2010]], device='cuda:0')), ('linear1.bias', tensor([ 0.2814, -0.9320, -0.2111, -0.0882], device='cuda:0')), ('linear2.weight', tensor([[-2.4781,  2.4800,  2.1854, -0.5736]], device='cuda:0'))])
+    
+
+
+```python
+# 실행된 데이터셋 상태 저장
+torch.save(state_dict, "our_model.tar")
+```
+
+
+```python
+# 저장된 데이터셋 불러오기
+state_dict = torch.load("our_model.tar") 
+
+# 새로운 데이터셋 생성 및 state 불러오기
+new_model = SimpleClassifier(num_inputs=2, num_hidden=4, num_outputs=1)
+new_model.load_state_dict(state_dict)
+
+# 위의 데이터와 똑같은 파라미터 보유한 것을 확인 가능
+print("Original model\n", model.state_dict())
+print("\nLoaded model\n", new_model.state_dict())
+```
+
+    Original model
+     OrderedDict([('linear1.weight', tensor([[-1.7430, -1.9468],
+            [ 1.8979, -2.3737],
+            [-2.0412,  1.0496],
+            [ 0.3867, -0.2010]], device='cuda:0')), ('linear1.bias', tensor([ 0.2814, -0.9320, -0.2111, -0.0882], device='cuda:0')), ('linear2.weight', tensor([[-2.4781,  2.4800,  2.1854, -0.5736]], device='cuda:0'))])
+    
+    Loaded model
+     OrderedDict([('linear1.weight', tensor([[-1.7430, -1.9468],
+            [ 1.8979, -2.3737],
+            [-2.0412,  1.0496],
+            [ 0.3867, -0.2010]])), ('linear1.bias', tensor([ 0.2814, -0.9320, -0.2111, -0.0882])), ('linear2.weight', tensor([[-2.4781,  2.4800,  2.1854, -0.5736]]))])
+    
+
+
+```python
+test_dataset = XORDataset(size=500) # test_dataset의 크기는 500
+test_data_loader = data.DataLoader(test_dataset, batch_size=128, shuffle=False, drop_last=False) # dataloader함수 사용
+```
+
+
+```python
+def eval_model(model, data_loader):
+    model.eval() # 해당모델을 평가모드로 전환 (드롭아웃 비활성화, 이동평균, 이동분산 업데이트 중지)
+    true_preds, num_preds = 0.0, 0.0
+
+    with torch.no_grad(): # 그레디언트 비활성화
+        for data_inputs, data_labels in data_loader:
+            data_inputs, data_labels = data_inputs.to(device), data_labels.to(device)
+            preds = model(data_inputs)
+            preds = preds.squeeze(dim=1)
+            preds = torch.sigmoid(preds)  
+            pred_labels = (preds >= 0.5).long()  
+
+            true_preds += (pred_labels == data_labels).sum()
+            num_preds += data_labels.shape[0]
+
+    acc = true_preds / num_preds
+    print(f"Accuracy of the model: {100.0*acc:4.2f}%")
+    
+```
+
+
+```python
+eval_model(model, test_data_loader) # 상위 코드에서 만들었던 두개의 데이터셋 평가모드 전환
+```
+
+    Accuracy of the model: 100.00%
+    
+
+# 상단에서 생성된 데이터셋들을 사용해 데이터 시각화
+
+
+```python
+@torch.no_grad() 
+def visualize_classification(model, data, label):
+    if isinstance(data, Tensor):
+        data = data.cpu().numpy()
+    if isinstance(label, Tensor):
+        label = label.cpu().numpy()
+    data_0 = data[label == 0]
+    data_1 = data[label == 1]
+
+    plt.figure(figsize=(4, 4)) # 시각자료의 사이즈는 4x4 
+    plt.scatter(data_0[:, 0], data_0[:, 1], edgecolor="#333", label="Class 0")
+    plt.scatter(data_1[:, 0], data_1[:, 1], edgecolor="#333", label="Class 1")
+    plt.title("Dataset samples") # 제목은 "Dataset samples"
+    plt.ylabel(r"$x_2$")
+    plt.xlabel(r"$x_1$")
+    plt.legend()
+
+
+    model.to(device)
+    c0 = Tensor(to_rgba("C0")).to(device)
+    c1 = Tensor(to_rgba("C1")).to(device)
+    x1 = torch.arange(-0.5, 1.5, step=0.01, device=device)
+    x2 = torch.arange(-0.5, 1.5, step=0.01, device=device)
+    xx1, xx2 = torch.meshgrid(x1, x2) 
+    model_inputs = torch.stack([xx1, xx2], dim=-1)
+    preds = model(model_inputs)
+    preds = torch.sigmoid(preds)
+
+    output_image = (1 - preds) * c0[None, None] + preds * c1[None, None]
+    output_image = (
+        output_image.cpu().numpy()
+    )
+    plt.imshow(output_image, origin="lower", extent=(-0.5, 1.5, -0.5, 1.5))
+    plt.grid(False)
+
+
+visualize_classification(model, dataset.data, dataset.label)
+plt.show()
+```
+
+
+    
+![png](output_63_0.png)
+    
+
