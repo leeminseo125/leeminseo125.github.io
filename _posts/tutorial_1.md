@@ -1,3 +1,10 @@
+---
+layout: single
+title: "pytorch lightning tutorial_1"
+---
+
+
+
 # Import
 
 
